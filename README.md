@@ -6,6 +6,7 @@ Group member names and ccids (3-4 members)
   hawaleh, Hana Awaleh  
   aasolank, Angela Solanki!
   hkazmi, Hooriya Kazmi
+  harimoto, Sho Harimoto
 
 # Group work break-down strategy
 Please add
