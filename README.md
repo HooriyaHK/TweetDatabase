@@ -3,7 +3,7 @@
 
 # CMPUT 291 Mini Project 1 -Fall 2024
 Group member names and ccids (3-4 members)  
-  hawaleh, Hana Awaleh  
+  hawaleh, Hana Awaleh
   aasolank, Angela Solanki
   hkazmi, Hooriya Kazmi
   harimoto, Sho Harimoto
