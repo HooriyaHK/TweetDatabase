@@ -18,11 +18,11 @@ def register_user(cursor, connection):
         
         # Retrieve the auto-generated user ID
         new_usr = cursor.lastrowid
-        print("\nSign-up Completed! Your user ID is:", new_usr)
+        print("\nsign-up Completed! Your user ID is:", new_usr)
     except sqlite3.IntegrityError:
-        print("\nError: Email or phone already registered.")
+        print("\nError: email or phone already registered.")
     except Exception as e:
-        print("\nAn error occurred during registration:", e)
+        print("\nerror occurred during registration:", e)
 
 # user login
 def login_user(cursor):
@@ -34,8 +34,8 @@ def login_user(cursor):
         cursor.execute("SELECT * FROM users WHERE usr = ? AND pwd = ?", (usr, pwd))
         user = cursor.fetchone()
         if user:
-            print(f"\nWelcome, {user[1]}!")  # Assuming `user[1]` is the name
-            return usr  # Return user ID if login is successful
+            print(f"\nWelcome, {user[1]}!")  
+            return usr  
         else:
             print("\nInvalid User ID or Password.")
             return None
