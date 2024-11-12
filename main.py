@@ -1,5 +1,6 @@
 import sqlite3
 
+
 def login_screen():
     print("=== Welcome to Twitter ===")
 
@@ -41,4 +42,4 @@ if __name__ == "__main__":
             print("\nExiting program...")
             break
         else:
-            print("\nInvalid option. Please try again.")
+            print("\nInvalid option. Please try again.") 
