@@ -11,7 +11,7 @@ def connect_db():
     cursor.execute("PRAGMA foreign_keys = ON")  # Enable foreign keys
     return connection, cursor
 
-# User registration function
+# user registration function
 def register_user(cursor, connection):
     print("\n=== Register ===")
     name = input("Enter Name: ")
@@ -20,25 +20,24 @@ def register_user(cursor, connection):
     pwd = getpass("Enter Password: ")
 
     try:
-        #query 2 
-        cursor.execute("INSERT INTO users (name, email, phone, pwd) VALUES (?, ?, ?, ?)", (name, email, phone, pwd))
-        connection.commit()
-        new_usr = cursor.lastrowid
-        print("\nSign-up Completed! Your user ID is:", new_usr)
+        # manually generate next available user ID
+        cursor.execute("SELECT MAX(usr) FROM users")
+        max_usr = cursor.fetchone()[0]
+        new_usr = max_usr + 1 if max_usr is not None else 1  # start with 1 if no users exist
+
+        # Insert the new user with the manually assigned user ID
+        cursor.execute("INSERT INTO users (usr, name, email, phone, pwd) VALUES (?, ?, ?, ?, ?)",
+                       (new_usr, name, email, phone, pwd))
+        connection.commit()  # Save changes
         
-        #query 1 
-        cursor.execute("SELECT * FROM users WHERE usr = ?", (new_usr,))
-        user = cursor.fetchone()
-        if user:
-            print("\nNewly added user:", user)
-        else:
-            print("\nUser not found in database after insertion.")
+        print("\nSign-up Completed! Your user ID is:", new_usr) #success message
+
     except sqlite3.IntegrityError:
         print("\nError: Email or phone already registered.")
     except Exception as e:
         print("\nAn error occurred during registration:", e)
 
-# User login
+# user login
 def login_user(cursor):
     print("=== Login ===")
     usr = input("Enter User ID: ")
