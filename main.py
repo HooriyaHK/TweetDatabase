@@ -31,6 +31,7 @@ def register_user(cursor, connection):
         connection.commit()  # Save changes
         
         print("\nSign-up Completed! Your user ID is:", new_usr) #success message
+        print("You can now log in!")
 
     except sqlite3.IntegrityError:
         print("\nError: Email or phone already registered.")
@@ -56,8 +57,9 @@ def login_user(cursor):
     except Exception as e:
         print("\nAn error occurred during login:", e)
         return None
+    #show twitter feed of the 5 tweets from followers 
 
-# Compose a tweet
+#compose tweet 
 def compose_tweet(cursor, connection, user_id):
     print("\n=== Compose Tweet ===")
     tweet_text = input("Enter your tweet (use # to tag hashtags): ")
@@ -66,26 +68,40 @@ def compose_tweet(cursor, connection, user_id):
     if hashtags:
         hashtags = [tag[1:].lower() for tag in hashtags]  # Remove '#' and lowercase
 
+    reply_to_tid = input("If this tweet is a reply to another tweet, enter its tweet ID (or press Enter to skip): ")
+    reply_to_tid = int(reply_to_tid) if reply_to_tid else None
+
     try:
-        #query 6
-        cursor.execute("INSERT INTO tweets (writer_id, text, tdate, ttime) VALUES (?, ?, DATE('now'), TIME('now'))", 
-                       (user_id, tweet_text))
+        # Manually setting the tid if needed (alternatively, rely on auto-increment)
+        tweet_tid = None  # Set to None if auto-generated, or manually set the tid
+        if tweet_tid is None:
+            cursor.execute("INSERT INTO tweets (writer_id, text, tdate, ttime, replyto_tid) VALUES (?, ?, DATE('now'), TIME('now'), ?)", 
+                           (user_id, tweet_text, reply_to_tid))
+        else:
+            cursor.execute("INSERT INTO tweets (tid, writer_id, text, tdate, ttime, replyto_tid) VALUES (?, ?, ?, DATE('now'), TIME('now'), ?)", 
+                           (tweet_tid, user_id, tweet_text, reply_to_tid))
         connection.commit()
-        tweet_id = cursor.lastrowid
+
+        tweet_id = cursor.lastrowid if tweet_tid is None else tweet_tid
         print(f"Tweet posted with ID: {tweet_id}")
 
+        # Insert hashtags into the hashtag_mentions table
         for tag in set(hashtags):  
             cursor.execute("INSERT INTO hashtag_mentions (tid, term) VALUES (?, ?)", (tweet_id, tag))
         connection.commit()
         print("Hashtags added to the database.")
+
     except sqlite3.Error as e:
         print(f"An error occurred while posting the tweet: {e}")
 
+
 # List followers
+#query 7 
 def list_followers(cursor, user_id):
     print("\n=== Followers ===")
     page = 1
     while True:
+        #tested query needed 
         offset = (page - 1) * 5
         cursor.execute("SELECT flwer, name FROM follows JOIN users ON follows.flwer = users.usr WHERE flwee = ? LIMIT 5 OFFSET ?", 
                        (user_id, offset))
@@ -109,49 +125,6 @@ def list_followers(cursor, user_id):
             page -= 1
         elif choice.lower() == 'exit':
             break
-
-# Show follower details
-def show_follower_details(cursor, follower_id):
-    print(f"\n=== Details for Follower ID {follower_id} ===")
-    cursor.execute("""
-        SELECT 
-            (SELECT COUNT(*) FROM tweets WHERE writer_id = ?) AS num_tweets,
-            (SELECT COUNT(*) FROM follows WHERE flwer = ?) AS num_following,
-            (SELECT COUNT(*) FROM follows WHERE flwee = ?) AS num_followers
-    """, (follower_id, follower_id, follower_id))
-    details = cursor.fetchone()
-    
-    if details:
-        print(f"Tweets: {details[0]}, Following: {details[1]}, Followers: {details[2]}")
-    else:
-        print("Follower not found or has no tweets.")
-
-    cursor.execute("SELECT tid, text, tdate, ttime FROM tweets WHERE writer_id = ? ORDER BY tdate DESC, ttime DESC LIMIT 3", 
-                   (follower_id,))
-    recent_tweets = cursor.fetchall()
-
-    if recent_tweets:
-        print("\nRecent Tweets:")
-        for tweet in recent_tweets:
-            print(f"Tweet ID: {tweet[0]}, Text: {tweet[1]}, Date: {tweet[2]}, Time: {tweet[3]}")
-    else:
-        print("No recent tweets.")
-
-    follow_choice = input("Type 'follow' to follow this user, or 'more' to see more tweets, or press Enter to return: ")
-    if follow_choice.lower() == 'follow':
-        try:
-            cursor.execute("INSERT INTO follows (flwer, flwee) VALUES (?, ?)", (follower_id, follower_id))
-            print("You are now following this user.")
-        except sqlite3.IntegrityError:
-            print("You are already following this user.")
-    elif follow_choice.lower() == 'more':
-        cursor.execute("SELECT tid, text, tdate, ttime FROM tweets WHERE writer_id = ? ORDER BY tdate DESC, ttime DESC", 
-                       (follower_id,))
-        all_tweets = cursor.fetchall()
-        for tweet in all_tweets[3:]:  # Skip the first 3 already shown
-            print(f"Tweet ID: {tweet[0]}, Text: {tweet[1]}, Date: {tweet[2]}, Time: {tweet[3]}")
-            if input("Press Enter to continue or type 'exit' to stop viewing tweets: ") == 'exit':
-                break
 
 # Logout function
 def logout():
