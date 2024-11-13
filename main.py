@@ -1,5 +1,6 @@
 # main.py
 #missing functions (tweet search, user search, tweet details, retweet, reply) + test functions
+
 import sqlite3
 from getpass import getpass  # hides password input for security
 import re  # for hashtag extraction
@@ -93,7 +94,8 @@ def compose_tweet(cursor, connection, user_id):
 
     except sqlite3.Error as e:
         print(f"An error occurred while posting the tweet: {e}")
-
+#Tweet posted with ID: 4
+#An error occurred while posting the tweet: FOREIGN KEY constraint failed
 
 # List followers
 #query 7 
@@ -125,6 +127,7 @@ def list_followers(cursor, user_id):
             page -= 1
         elif choice.lower() == 'exit':
             break
+        #works but cant see user info yet 
 
 # Logout function
 def logout():
