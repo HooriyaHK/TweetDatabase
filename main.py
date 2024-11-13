@@ -1,5 +1,5 @@
 # main.py
-
+#missing functions (tweet search, user search, tweet details, retweet, reply) + test functions
 import sqlite3
 from getpass import getpass  # hides password input for security
 import re  # for hashtag extraction
