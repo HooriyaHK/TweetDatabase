@@ -1,6 +1,3 @@
-# main.py
-#missing functions (tweet search, user search, tweet details, retweet, reply) + test functions
-
 import sqlite3
 from getpass import getpass  # hides password input for security
 import re  # for hashtag extraction
@@ -12,7 +9,7 @@ def connect_db():
     cursor.execute("PRAGMA foreign_keys = ON")  # Enable foreign keys
     return connection, cursor
 
-# user registration function
+# User registration function
 def register_user(cursor, connection):
     print("\n=== Register ===")
     name = input("Enter Name: ")
@@ -21,163 +18,225 @@ def register_user(cursor, connection):
     pwd = getpass("Enter Password: ")
 
     try:
-        # manually generate next available user ID
+        # Generate next available user ID
         cursor.execute("SELECT MAX(usr) FROM users")
         max_usr = cursor.fetchone()[0]
-        new_usr = max_usr + 1 if max_usr is not None else 1  # start with 1 if no users exist
+        new_usr = max_usr + 1 if max_usr is not None else 1  # Start with 1 if no users exist
 
-        # Insert the new user with the manually assigned user ID
+        # Insert new user
         cursor.execute("INSERT INTO users (usr, name, email, phone, pwd) VALUES (?, ?, ?, ?, ?)",
                        (new_usr, name, email, phone, pwd))
-        connection.commit()  # Save changes
-        
-        print("\nSign-up Completed! Your user ID is:", new_usr) #success message
-        print("You can now log in!")
+        connection.commit()
+        print("\nSign-up Completed! Your user ID is:", new_usr)
 
     except sqlite3.IntegrityError:
         print("\nError: Email or phone already registered.")
     except Exception as e:
         print("\nAn error occurred during registration:", e)
 
-# user login
+# User login
 def login_user(cursor):
     print("=== Login ===")
     usr = input("Enter User ID: ")
     pwd = getpass("Enter Password: ")
 
     try:
-        #query 1 
         cursor.execute("SELECT * FROM users WHERE usr = ? AND pwd = ?", (usr, pwd))
         user = cursor.fetchone()
         if user:
-            print(f"\nWelcome, {user[1]}!")  
-            return usr  
+            print(f"\nWelcome, {user[1]}!")
+            return usr
         else:
             print("\nInvalid User ID or Password.")
             return None
     except Exception as e:
         print("\nAn error occurred during login:", e)
         return None
-    #show twitter feed of the 5 tweets from followers 
 
-#compose tweet 
+# Display tweets and retweets of followed users
+def display_feed(cursor, user_id):
+    try:
+        # Fetch tweets
+        cursor.execute("""
+            SELECT T.tid, T.writer_id, T.text, T.tdate, T.ttime
+            FROM tweets T, follows F
+            WHERE T.writer_id = F.flwer AND F.flwee = ?
+            LIMIT 5 OFFSET 0;
+        """, (user_id,))
+        tweets = cursor.fetchall()
+
+        # Fetch retweets
+        cursor.execute("""
+            SELECT RT.tid, RT.retweeter_id, RT.writer_id, RT.spam, RT.rdate
+            FROM retweets RT, follows F
+            WHERE RT.retweeter_id = F.flwer AND F.flwee = ?
+            LIMIT 5 OFFSET 0;
+        """, (user_id,))
+        retweets = cursor.fetchall()
+
+        print("\n--- Feed ---")
+        print("\nTweets:")
+        for tweet in tweets:
+            print(tweet)
+
+        print("\nRetweets:")
+        for retweet in retweets:
+            print(retweet)
+
+    except sqlite3.Error as e:
+        print("An error occurred:", e)
+
+# Compose tweet
 def compose_tweet(cursor, connection, user_id):
     print("\n=== Compose Tweet ===")
     tweet_text = input("Enter your tweet (use # to tag hashtags): ")
-
     hashtags = re.findall(r'#\w+', tweet_text)
-    if hashtags:
-        hashtags = [tag[1:].lower() for tag in hashtags]  # Remove '#' and lowercase
 
-    reply_to_tid = input("If this tweet is a reply to another tweet, enter its tweet ID (or press Enter to skip): ")
+    reply_to_tid = input("If this is a reply, enter its tweet ID (or press Enter to skip): ")
     reply_to_tid = int(reply_to_tid) if reply_to_tid else None
 
     try:
-        # Manually setting the tid if needed (alternatively, rely on auto-increment)
-        tweet_tid = None  # Set to None if auto-generated, or manually set the tid
-        if tweet_tid is None:
-            cursor.execute("INSERT INTO tweets (writer_id, text, tdate, ttime, replyto_tid) VALUES (?, ?, DATE('now'), TIME('now'), ?)", 
-                           (user_id, tweet_text, reply_to_tid))
-        else:
-            cursor.execute("INSERT INTO tweets (tid, writer_id, text, tdate, ttime, replyto_tid) VALUES (?, ?, ?, DATE('now'), TIME('now'), ?)", 
-                           (tweet_tid, user_id, tweet_text, reply_to_tid))
+        cursor.execute("""
+            INSERT INTO tweets (writer_id, text, tdate, ttime, replyto_tid) 
+            VALUES (?, ?, DATE('now'), TIME('now'), ?)
+        """, (user_id, tweet_text, reply_to_tid))
         connection.commit()
-
-        tweet_id = cursor.lastrowid if tweet_tid is None else tweet_tid
+        tweet_id = cursor.lastrowid
         print(f"Tweet posted with ID: {tweet_id}")
 
-        # Insert hashtags into the hashtag_mentions table
-        for tag in set(hashtags):  
+        # Insert hashtags
+        for tag in set([tag[1:].lower() for tag in hashtags]):
             cursor.execute("INSERT INTO hashtag_mentions (tid, term) VALUES (?, ?)", (tweet_id, tag))
         connection.commit()
-        print("Hashtags added to the database.")
 
     except sqlite3.Error as e:
         print(f"An error occurred while posting the tweet: {e}")
-#Tweet posted with ID: 4
-#An error occurred while posting the tweet: FOREIGN KEY constraint failed
+
+# Search tweets by keyword
+def search_tweets(cursor, keyword):
+    try:
+        cursor.execute("""
+            SELECT tid, writer_id, text, tdate, ttime 
+            FROM tweets 
+            WHERE text LIKE '%' || ? || '%' 
+               OR tid IN (SELECT tid FROM hashtag_mentions WHERE term = ?)
+            ORDER BY tdate DESC
+            LIMIT 5 OFFSET 0;
+        """, (keyword, keyword))
+        results = cursor.fetchall()
+        
+        print("\n--- Tweet Search Results ---")
+        for tweet in results:
+            print(tweet)
+
+    except sqlite3.Error as e:
+        print("An error occurred during tweet search:", e)
+
+# Search users by keyword
+def search_users(cursor, keyword):
+    try:
+        cursor.execute("""
+            SELECT usr, name, email, phone
+            FROM users
+            WHERE name LIKE '%' || ? || '%' 
+            ORDER BY LENGTH(name) ASC
+            LIMIT 5 OFFSET 0;
+        """, (keyword,))
+        results = cursor.fetchall()
+        
+        print("\n--- User Search Results ---")
+        for user in results:
+            print(user)
+
+    except sqlite3.Error as e:
+        print("An error occurred during user search:", e)
 
 # List followers
-#query 7 
 def list_followers(cursor, user_id):
-    print("\n=== Followers ===")
-    page = 1
-    while True:
-        #tested query needed 
-        offset = (page - 1) * 5
-        cursor.execute("SELECT flwer, name FROM follows JOIN users ON follows.flwer = users.usr WHERE flwee = ? LIMIT 5 OFFSET ?", 
-                       (user_id, offset))
+    try:
+        cursor.execute("""
+            SELECT flwer, name 
+            FROM follows 
+            JOIN users ON follows.flwer = users.usr 
+            WHERE flwee = ?
+            LIMIT 5 OFFSET 0;
+        """, (user_id,))
         followers = cursor.fetchall()
-
-        if not followers:
-            print("No more followers.")
-            break
-
-        for follower in followers:
-            print(f"Follower ID: {follower[0]}, Name: {follower[1]}")
-
-        choice = input("Select a follower ID to view details, or type 'next' for more, 'back' for previous page, or 'exit': ")
         
-        if choice.isdigit():
-            follower_id = int(choice)
-            show_follower_details(cursor, follower_id)
-        elif choice.lower() == 'next':
-            page += 1
-        elif choice.lower() == 'back' and page > 1:
-            page -= 1
-        elif choice.lower() == 'exit':
-            break
-        #works but cant see user info yet 
+        print("\n--- Followers ---")
+        for follower in followers:
+            print(follower)
 
-# Logout function
-def logout():
-    print("\nLogging out... Returning to login page.\n")
+    except sqlite3.Error as e:
+        print("An error occurred while listing followers:", e)
 
-# Main login screen
-def login_screen():
-    print("\n=== Welcome to Twitter ===")
-    print("1. Login")
-    print("2. Register")
-    print("3. Exit")
-    option = input("\nChoose an option: ")
-    return option
+# Follow a user
+def follow_user(cursor, connection, flwer, flwee):
+    try:
+        cursor.execute("""
+            INSERT INTO follows(flwer, flwee, start_date)
+            VALUES(?, ?, DATE('now'));
+        """, (flwer, flwee))
+        connection.commit()
+        print(f"\nYou are now following User {flwee}.")
 
-# Logged-in user menu
-def user_menu(cursor, connection, user_id):
+    except sqlite3.Error as e:
+        print("An error occurred while following the user:", e)
+
+# Main program flow
+def main():
+    connection, cursor = connect_db()
+    
     while True:
-        print("\n=== User Menu ===")
-        print("1. Compose Tweet")
-        print("2. List Followers")
-        print("3. Logout")
-        option = input("\nChoose an option: ")
-
-        if option == '1':
-            compose_tweet(cursor, connection, user_id)
-        elif option == '2':
-            list_followers(cursor, user_id)
-        elif option == '3':
-            logout()
-            break  # Return to login screen
-        else:
-            print("\nInvalid option. Please try again.")
-
-# Main program
-if __name__ == "__main__":
-    connection, cursor = connect_db()  # Establish database connection
-
-    while True:
-        option = login_screen()
-        if option == '1':
+        print("\n--- Menu ---")
+        print("1. Register")
+        print("2. Login")
+        print("3. Exit")
+        choice = input("Choose an option: ")
+        
+        if choice == '1':
+            register_user(cursor, connection)
+        
+        elif choice == '2':
             user_id = login_user(cursor)
             if user_id:
-                print(f"User {user_id} is now logged in.")
-                user_menu(cursor, connection, user_id)  # Go to user menu
-        elif option == '2':
-            register_user(cursor, connection)
-        elif option == '3':
-            print("\nExiting program...")
+                while True:
+                    print("\n--- User Menu ---")
+                    print("1. View Feed")
+                    print("2. Compose Tweet")
+                    print("3. Search Tweets")
+                    print("4. Search Users")
+                    print("5. List Followers")
+                    print("6. Logout")
+                    option = input("Choose an option: ")
+                    
+                    if option == '1':
+                        display_feed(cursor, user_id)
+                    elif option == '2':
+                        compose_tweet(cursor, connection, user_id)
+                    elif option == '3':
+                        keyword = input("Enter keyword to search tweets: ")
+                        search_tweets(cursor, keyword)
+                    elif option == '4':
+                        keyword = input("Enter keyword to search users: ")
+                        search_users(cursor, keyword)
+                    elif option == '5':
+                        list_followers(cursor, user_id)
+                    elif option == '6':
+                        print("\nLogged out.")
+                        break
+                    else:
+                        print("Invalid option. Try again.")
+        
+        elif choice == '3':
+            print("Goodbye!")
             break
+        
         else:
-            print("\nInvalid option. Please try again.")
+            print("Invalid option. Try again.")
+    
+    connection.close()
 
-    connection.close()  # Close database connection
+# Run the program
+if __name__ == "__main__":
+    main()
