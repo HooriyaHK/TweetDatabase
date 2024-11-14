@@ -182,6 +182,17 @@ def follow_user(cursor, connection, flwer, flwee):
 
     except sqlite3.Error as e:
         print("An error occurred while following the user:", e)
+# Unfollow a user
+def unfollow_user(cursor, connection, flwer, flwee):
+    try:
+        cursor.execute("""
+            DELETE FROM follows 
+            WHERE flwer = ? AND flwee = ?;
+        """, (flwer, flwee))
+        connection.commit()
+        print(f"\nYou have unfollowed User {flwee}.")
+    except sqlite3.Error as e:
+        print("An error occurred while unfollowing the user:", e)
 
 # Main program flow
 def main():
@@ -207,7 +218,9 @@ def main():
                     print("3. Search Tweets")
                     print("4. Search Users")
                     print("5. List Followers")
-                    print("6. Logout")
+                    print("6. Follow a User")
+                    print("7. Unfollow a User")
+                    print("8. Logout")
                     option = input("Choose an option: ")
                     
                     if option == '1':
@@ -223,6 +236,12 @@ def main():
                     elif option == '5':
                         list_followers(cursor, user_id)
                     elif option == '6':
+                        flwee = input("Enter the user ID to follow: ")
+                        follow_user(cursor, connection, user_id, flwee)
+                    elif option == '7':
+                        flwee = input("Enter the user ID to unfollow: ")
+                        unfollow_user(cursor, connection, user_id, flwee)
+                    elif option == '8':
                         print("\nLogged out.")
                         break
                     else:
