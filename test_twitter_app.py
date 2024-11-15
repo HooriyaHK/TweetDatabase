@@ -7,7 +7,8 @@ from main import *
 class TestTwitterApp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.connection, cls.cursor = connect_db()
+        db_name = "prj-sample.db"
+        cls.connection, cls.cursor = connect_db(db_name)
 
         # Set up a test database
         cls.cursor.execute("DELETE FROM users")
