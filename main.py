@@ -3,8 +3,9 @@ from getpass import getpass  # hides password input for security
 import re  # for hashtag extraction
 
 # Function to connect to database
-def connect_db():
-    connection = sqlite3.connect("prj-sample.db")
+def connect_db(db_name):
+   # connection = sqlite3.connect("prj-sample.db")
+    connection = sqlite3.connect(db_name)
     cursor = connection.cursor()
     cursor.execute("PRAGMA foreign_keys = ON")  # Enable foreign keys
     return connection, cursor
@@ -236,7 +237,8 @@ def unfollow_user(cursor, connection, flwer, flwee):
 
 # Main program flow
 def main():
-    connection, cursor = connect_db()
+    db_name = input("Please enter the file name: ")
+    connection, cursor = connect_db(db_name)
     
     while True:
         print("\n--- Menu ---")
