@@ -9,7 +9,7 @@ Group member names and ccids (3-4 members)
   harimoto, Sho Harimoto
 
 # Group work break-down strategy
-Please add
+Hooriya - worked on the functionality for searching tweets, searching users, listing followers, following a user, and unfollowing a user. For the **Search Tweets** and **Search Users** features, I implemented the logic to filter and retrieve relevant data based on user input. I also developed functionality to **list followers** and enabled users to follow and unfollow other users, with appropriate validations to prevent redundant actions. After implementing these features, I conducted extensive testing to ensure they worked as expected, verifying edge cases like searching for non-existent tweets or users, and handling invalid follow/unfollow attempts. I also helped debug issues related to database queries and user input errors. Throughout this process, I collaborated with the team to integrate these features with the overall application, assisting teammates with overlapping functionalities and resolving any database conflicts.
 
 # Code execution guide
 Please add
