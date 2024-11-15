@@ -9,13 +9,52 @@ def connect_db():
     cursor.execute("PRAGMA foreign_keys = ON")  # Enable foreign keys
     return connection, cursor
 
+import re
+from getpass import getpass  # hides password input for security
+
+# function to validate email & phone number 
+def is_valid_input(input_value, input_type):
+    if input_type == 'email':
+        # Basic email validation pattern
+        pattern = r'^[\w\.-]+@[\w\.-]+\.\w{2,3}$' #
+    elif input_type == 'phone':
+        # 10-digit phone number validation pattern
+        pattern = r'^\d{10}$'
+    else:
+        raise ValueError("Invalid input type. Use 'email' or 'phone'.")
+    
+    return re.match(pattern, input_value) is not None
+
+
 # User registration function
 def register_user(cursor, connection):
     print("\n=== Register ===")
     name = input("Enter Name: ")
-    email = input("Enter Email: ")
-    phone = input("Enter Phone: ")
-    pwd = getpass("Enter Password: ")
+
+    # loop for email validation
+    while True:
+        email = input("Enter Email: ")
+        if is_valid_input(email, 'email'):
+            break
+        else:
+            print("Invalid email format. Please enter a valid email with '@' and a domain (e.g., example@domain.com).")
+
+    # loop for phone num validation
+    while True:
+        phone = input("Enter Phone (10 digits): ")
+        if is_valid_input(phone, 'phone'):
+            break
+        else:
+            print("Invalid phone number. Please enter a 10-digit phone number.")
+
+    # Password entry and confirmation loop
+    while True:
+        pwd = getpass("Enter Password: ")
+        pwd_confirm = getpass("Retype Password: ")
+        if pwd == pwd_confirm:
+            break
+        else:
+            print("Passwords do not match. Please try again.")
 
     try:
         # Generate next available user ID
@@ -33,6 +72,7 @@ def register_user(cursor, connection):
         print("\nError: Email or phone already registered.")
     except Exception as e:
         print("\nAn error occurred during registration:", e)
+
 
 # User login
 def login_user(cursor):
@@ -203,7 +243,7 @@ def main():
         print("1. Register")
         print("2. Login")
         print("3. Exit")
-        choice = input("Choose an option: ")
+        choice = input("\nChoose an option: ")
         
         if choice == '1':
             register_user(cursor, connection)
@@ -221,7 +261,7 @@ def main():
                     print("6. Follow a User")
                     print("7. Unfollow a User")
                     print("8. Logout")
-                    option = input("Choose an option: ")
+                    option = input("\nChoose an option: ")
                     
                     if option == '1':
                         display_feed(cursor, user_id)
@@ -248,7 +288,7 @@ def main():
                         print("Invalid option. Try again.")
         
         elif choice == '3':
-            print("Goodbye!")
+            print("\nGoodbye!\n")
             break
         
         else:
@@ -256,6 +296,6 @@ def main():
     
     connection.close()
 
-# Run the program
+# run the program
 if __name__ == "__main__":
     main()
