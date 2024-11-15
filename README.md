@@ -13,6 +13,8 @@ Hooriya - worked on the functionality for searching tweets, searching users, lis
 
 Sho - worked on the sql. write the sql for find most 5 tweets and retweets for every login user, list user by keywords, find the detail of user after another user clicked into their profile, list 3 recent tweets of that user, add the follower to user's follower list and able to check more tweets after click check more tweets. I also helped team with using github and test the program at the end, also discuss with teammates about the functionality implement ways. Throughout this process, I collaborated with the team to integrate these features with the overall application, assisting teammates with overlapping functionalities and resolving any database conflicts. 
 
+Hana - focused on building the core features for user registration, login, tweet composition, and displaying a personalized feed. I set up validation for registration inputs (like email format and password confirmation) to improve data integrity. For the Feed Display, I implemented logic to show tweets and retweets from followed users in chronological order, with a “load more” option. I also made sure SQL queries were secure and helped troubleshoot user input and data validation issues. Throughout, I worked with the team to test and integrate these features smoothly, addressing any issues that arose along the way.
+
 # Code execution guide
 Please add
 
