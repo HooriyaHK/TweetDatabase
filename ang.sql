@@ -1,5 +1,5 @@
 -- SQLite
-/*
+
 --1. Login Query:
 --Find out if userID and pwd exists in table, by searching through it
 SELECT * FROM users WHERE usr = ? AND pwd = ?;
@@ -63,7 +63,7 @@ FROM users U, tweets T
 WHERE U.usr = 1;
 */
 
-/*
+
 --6: Compose a tweet:
 -- if a tweet contains a hashtag, insert # into hashtag_mentions table
 INSERT INTO tweets (tid, writer_id, text, tdate, ttime, replyto_tid) 
@@ -90,11 +90,20 @@ FROM tweets
 WHERE writer_id = ?
 ORDER BY tdate DESC, ttime DESC
 LIMIT 3;
-*/
 
 --follow the select user
-INSERT INTO follows(flwer, flwee,  start_date)
-VALUES(2, 1, '2024-11-15');
+INSERT INTO follows(flwer, flwee, start_date)
+VALUES(?, ?, DATE('NOW'))
+ON CONFLICT DO NOTHING;
+
+--click check more tweets with 5 tweets update each time
+SELECT tid, text, tdate, ttime 
+FROM tweets 
+WHERE writer_id = ?
+ORDER BY tdate DESC, ttime DESC
+LIMIT 5 OFFSET ?;
+
+
 
 --display all tables
 --SELECT * FROM tweets;
@@ -124,7 +133,7 @@ finally:
 
 --display all tables
 --SELECT *FROM users;
-SELECT *FROM follows;
+--SELECT *FROM follows;
 --SELECT * FROM tweets;
 --SELECT *FROM retweets;
 --SELECT * FROM hashtag_mentions;
