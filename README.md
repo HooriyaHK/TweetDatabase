@@ -15,6 +15,10 @@ Sho - worked on the sql. write the sql for find most 5 tweets and retweets for e
 
 Hana - focused on building the core features for user registration, login, tweet composition, and displaying a personalized feed. I set up validation for registration inputs (like email format and password confirmation) to improve data integrity. For the Feed Display, I implemented logic to show tweets and retweets from followed users in chronological order, with a “load more” option. I also made sure SQL queries were secure and helped troubleshoot user input and data validation issues. Throughout, I worked with the team to test and integrate these features smoothly, addressing any issues that arose along the way.
 
+Angela: Implemented the following queries: 1) Find out if userID and pwd exist in table by searching through it 2) Register any users that do not exist 3) Search for tweets by prompting users to enter one or more keywords. If the tweet matches a keyword or a hashtag, return its content with the unique identifier, the author ID, the content of the tweet, date, time, and if the tweet was a reply to another tweet, it will store the original tweets unique ID. 4) Compose a tweet: prompting the user to compose a tweet 5)List followers . 
+I also assisted in testing functions via unit tests. As well, I created the DesignDoc, where I worked on the General Overview of the System, including the System Workflow and User Guide, and the Component Structure and Design. 
+
+
 # Code execution guide
 Please add
 
