@@ -4,14 +4,15 @@ import re  # for hashtag extraction
 
 # Function to connect to database
 def connect_db(db_name):
-   # connection = sqlite3.connect("prj-sample.db")
+    #connection = sqlite3.connect("prj-sample.db")
+    if not db_name.endswith(".db"):
+        print("\nError: Please provide a valid .db file.")
+        return None, None
+
     connection = sqlite3.connect(db_name)
     cursor = connection.cursor()
     cursor.execute("PRAGMA foreign_keys = ON")  # Enable foreign keys
     return connection, cursor
-
-import re
-from getpass import getpass  # hides password input for security
 
 # function to validate email & phone number 
 def is_valid_input(input_value, input_type):
@@ -100,8 +101,10 @@ def display_feed(cursor, user_id):
         # Fetch tweets
         cursor.execute("""
             SELECT T.tid, T.writer_id, T.text, T.tdate, T.ttime
-            FROM tweets T, follows F
-            WHERE T.writer_id = F.flwer AND F.flwee = ?
+            FROM tweets T
+            JOIN follows F ON T.writer_id = F.flwee
+            WHERE F.flwer = ?
+            ORDER BY T.tdate DESC, T.ttime DESC
             LIMIT 5 OFFSET 0;
         """, (user_id,))
         tweets = cursor.fetchall()
@@ -145,7 +148,7 @@ def compose_tweet(cursor, connection, user_id):
         tweet_id = cursor.lastrowid
         print(f"Tweet posted with ID: {tweet_id}")
 
-        # Insert hashtags
+        # Normalize and insert hashtags
         for tag in set([tag[1:].lower() for tag in hashtags]):
             cursor.execute("INSERT INTO hashtag_mentions (tid, term) VALUES (?, ?)", (tweet_id, tag))
         connection.commit()
@@ -185,10 +188,13 @@ def search_users(cursor, keyword):
         """, (keyword,))
         results = cursor.fetchall()
         
+        # Display user ID and name
         print("\n--- User Search Results ---")
-        for user in results:
-            print(user)
-
+        if results:
+            for user in results:
+                print(f"User ID: {user[0]}, Name: {user[1]}")
+        else:
+            print("No users found matching the given keyword.")
     except sqlite3.Error as e:
         print("An error occurred during user search:", e)
 
@@ -221,8 +227,11 @@ def follow_user(cursor, connection, flwer, flwee):
         connection.commit()
         print(f"\nYou are now following User {flwee}.")
 
-    except sqlite3.Error as e:
-        print("An error occurred while following the user:", e)
+    except sqlite3.IntegrityError as e:
+        if "UNIQUE constraint failed: follows.flwer, follows.flwee" in str(e):
+            print("\nYou are already following this user.")
+        else:
+            print("\nAn error occurred while following the user:", e)
 # Unfollow a user
 def unfollow_user(cursor, connection, flwer, flwee):
     try:
@@ -235,10 +244,15 @@ def unfollow_user(cursor, connection, flwer, flwee):
     except sqlite3.Error as e:
         print("An error occurred while unfollowing the user:", e)
 
-# Main program flow
+# main program flow
 def main():
     db_name = input("Please enter the file name: ")
     connection, cursor = connect_db(db_name)
+
+    # exit if connection is None bc of invalid file
+    if connection is None:
+        print("Exiting program due to invalid database file.\n")
+        return
     
     while True:
         print("\n--- Menu ---")
