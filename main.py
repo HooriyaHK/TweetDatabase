@@ -159,14 +159,37 @@ def compose_tweet(cursor, connection, user_id):
 # Search tweets by keyword
 def search_tweets(cursor, keyword):
     try:
+
+        #newly added in--------------
+        # Construct pattern to match only whole words
+        pattern = f'% {keyword} %'  # Matches keyword surrounded by spaces
+        pattern_start = f'{keyword} %'  # Matches keyword at the start
+        pattern_end = f'% {keyword}'  # Matches keyword at the end
+        exact_pattern = keyword  # Matches only the exact keyword
+        #newly added in-------------
+
+        #---------
         cursor.execute("""
             SELECT tid, writer_id, text, tdate, ttime 
             FROM tweets 
-            WHERE text LIKE '%' || ? || '%' 
+            WHERE (text LIKE ? COLLATE NOCASE
+               OR text LIKE ? COLLATE NOCASE
+               OR text LIKE ? COLLATE NOCASE
+               OR text = ? COLLATE NOCASE)
                OR tid IN (SELECT tid FROM hashtag_mentions WHERE term = ?)
             ORDER BY tdate DESC
             LIMIT 5 OFFSET 0;
-        """, (keyword, keyword))
+        """, (pattern, pattern_start, pattern_end, exact_pattern, keyword))
+        #--------
+
+
+      #  cursor.execute("""
+      #      SELECT tid, writer_id, text, tdate, ttime 
+      #      FROM tweets 
+       #     WHERE text LIKE '%' || ? || '%' 
+        #       OR tid IN (SELECT tid FROM hashtag_mentions WHERE term = ?)
+         ##  LIMIT 5 OFFSET 0;
+     #   """, (keyword, keyword))
         results = cursor.fetchall()
         
         print("\n--- Tweet Search Results ---")
